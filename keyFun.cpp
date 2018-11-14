@@ -219,15 +219,15 @@ void tranceBr(splitWord wordCon){
       string opBlock1 = wordCon.vaCol[4];
       string opBlock2 = wordCon.vaCol[6];
       outPut("btfsc", "STATUS", 0, 1);
-      outPut("bra", opBlock1);
-      outPut("bra", opBlock2);
+      outPutJump("bra", opBlock1);
+      outPutJump("bra", opBlock2);
 
     } else if(instrName.compare("oge")){  //Instr: a >= b
       string opBlock1 = wordCon.vaCol[4];
       string opBlock2 = wordCon.vaCol[6];
       outPut("btfss", "STATUS", 0, 1);
-      outPut("bra", opBlock1);
-      outPut("bra", opBlock2);
+      outPutJump("bra", opBlock1);
+      outPutJump("bra", opBlock2);
 
     } else if(instrName.compare("olt")){ //Instr: a < b
       string testName = wordCon.vaCol[2];
@@ -237,8 +237,8 @@ void tranceBr(splitWord wordCon){
       outPut("movlw", 0);
       outPut("cpfseq", regNameTest);
       outPut("btfss", "STATUS", 0, 1);
-      outPut("bra", opBlock2);
-      outPut("bra", opBlock1);
+      outPutJump("bra", opBlock2);
+      outPutJump("bra", opBlock1);
     
     } else if(instrName.compare("ogt")){ //Instr: a > b
       string testName = wordCon.vaCol[2];

@@ -18,5 +18,6 @@ void outPutJump(string instrName, string op){
 }
 
 void outPutLabel(string orderName){
+  cout << "\n" << flush;
   cout << "Label" << "%" << orderName << ":" << endl;
 }
