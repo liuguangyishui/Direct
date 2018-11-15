@@ -23,14 +23,15 @@ void open_file(string &fileName){
     changeComma(singleLine);
     string singleWord;
     istringstream iss(singleLine);
-    regex res("\%.*");
+    regex reg1("\%\\d＋\b");        //for operator %x
+    //regex reg2("^\@\w＋\b=\bglobal");//for global var @varName ＝ global
     splitWord wordCon;
 
     while(iss >> singleWord){        //get every word in line
       if(operateSet.find(singleWord) != operateSet.end()){
 	auto index = operateSet.find(singleWord);	
 	wordCon.instrName = static_cast<keyWord>(index->second);
-      } else if(regex_match(singleWord, res)){
+      } else if(regex_match(singleWord, reg1)){
 	wordCon.opCol.push_back(singleWord);
       } 
       wordCon.vaCol.push_back(singleWord);
@@ -48,6 +49,7 @@ void open_file(string &fileName){
     case fcmp:               tranceFcmp(wordCon);   break;
     case br:                 tranceBr(wordCon);     break;
     case label:              tranceLabel(wordCon);  break;
+    case globa:              tranceGlobal(wordCon); break;
     default: break;
     }
   }

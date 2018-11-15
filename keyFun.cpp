@@ -35,7 +35,7 @@ string getRegValue(string opSrc){
  */
 void programBegin(){
   outPut("org", "0x0000");
-  outPutJump("goto", "Start");
+  outPutJump("goto", "main");
   outPutLabel("Start");
 }
 
@@ -265,6 +265,23 @@ void tranceLabel(splitWord wordCon){
   outPutLabel(orderName);
 }
 
+/*global var 
+ */
+void tranceGlobal(splitWord wordCon){
+  string opDes = wordCon.vaCol[0];
+  allocaReg(opDes);
+  string opSrc = wordCon.vaCol[4];
+  string regNameSrc = getRegValue(opDes);
+  outPut("movlw", opSrc);
+  outPut("movwf(s", regNameSrc);   
+}
+
+void tranceDefine(splitWord wordCon){
+  string opDes = wordCon.vaCol[2];
+  int index = opDes.find("(");
+  string funName = opDes.substr(1, index);
+  outPutLabel(funName);
+}
 
 void tranceRet(splitWord wordCon){
   //  cout << "i have been caleed tranceRet" << endl;

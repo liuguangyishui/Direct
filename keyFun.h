@@ -6,8 +6,21 @@
 #define _KEYFUN_H_
 using namespace::std;
 
-static unordered_map<string, string> storeMap;
+/*storeMap stores the map between the virtual reg 
+ *like %x and acutal reg like 0xAH
+ */
+static unordered_map<string, string> storeMap; 
+
+/*During the transform of some statement like the 
+ *control statement in tranceBr fun, we should use 
+ *the last instr infomation
+ */
 static string lastInstrName(" ");
+
+/*globalMap store the map between the global var name
+ *and the actual reg
+ */
+static unordered_map<string, string> globalMap;
 
 //clear the comma in the singleLine
 void changeComma(string&); 
@@ -45,6 +58,12 @@ void tranceBr(splitWord);
 
 //for label instr
 void tranceLabel(splitWord);  
+
+//for global var
+void tranceGlobal(splitWord);
+
+//for fun 
+void tranceDefine(splitWord);
 
 //for ret instr
 void tranceRet(splitWord);    
