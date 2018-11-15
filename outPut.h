@@ -4,6 +4,13 @@
 #define _OUTPUT_H_
 using namespace::std;
 
+//output file name
+static string outputFileName("");
+
+void open_outputFile(string);
+
+void close_outputFile();
+
 //print instr without the last index number
 void outPut(string, string); 
 

@@ -35,8 +35,8 @@ string getRegValue(string opSrc){
  */
 void programBegin(){
   outPut("org", "0x0000");
-  outPutJump("goto", "main");
-  outPutLabel("Start");
+  outPutJump("goto", "%main");
+  // outPutLabel("Start");
 }
 
 /*This fun alloca register for the IR's operator %x
@@ -279,7 +279,7 @@ void tranceGlobal(splitWord wordCon){
 void tranceDefine(splitWord wordCon){
   string opDes = wordCon.vaCol[2];
   int index = opDes.find("(");
-  string funName = opDes.substr(1, index);
+  string funName = opDes.substr(1, index-1);
   outPutLabel(funName);
 }
 

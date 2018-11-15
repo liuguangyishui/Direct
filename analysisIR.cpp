@@ -7,7 +7,7 @@
 using namespace::std;
 
 void open_file(string &fileName){
-  ifstream IRfile(fileName,ios::in);
+  ifstream IRfile(fileName,ios_base::in);
   if(!IRfile.is_open()){
     cout << "Error open file!" << endl;
     return;
@@ -23,7 +23,8 @@ void open_file(string &fileName){
     changeComma(singleLine);
     string singleWord;
     istringstream iss(singleLine);
-    regex reg1("\%\\d＋\b");        //for operator %x
+    //    regex reg1("\%\\d＋\b");        //for operator %x
+    regex reg1("\%.+");
     //regex reg2("^\@\w＋\b=\bglobal");//for global var @varName ＝ global
     splitWord wordCon;
 
@@ -50,6 +51,7 @@ void open_file(string &fileName){
     case br:                 tranceBr(wordCon);     break;
     case label:              tranceLabel(wordCon);  break;
     case globa:              tranceGlobal(wordCon); break;
+    case defin:              tranceDefine(wordCon); break;
     default: break;
     }
   }
