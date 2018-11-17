@@ -1,4 +1,3 @@
-#include <set>
 #include <unordered_map>
 #include <vector>
 
@@ -6,6 +5,10 @@
 #define _KEYWORD_H_
 
 using namespace::std;
+
+/* operateSet store the map between the instrName
+ * and enum keyWord index
+ */
 static unordered_map<string,int> operateSet \
   = {{"alloca", 1}, {"load", 2},
      {"store", 3},  {"ret",4},
@@ -15,9 +18,13 @@ static unordered_map<string,int> operateSet \
      {"global", 10},{"define", 11},
      {"call", 12}};
 
+/* keyWord mainly use for the switch statement in 
+ * analysisIR.cpp which indicate which tranfrom fun
+ * should be called.
+ */
 enum keyWord{
   knull,
-  alloc,     //don't use alloca,it is a reserve key
+  alloc,  //not use 'alloca',since it is a keyWord in c++
   load,
   store,
   ret,
@@ -27,15 +34,18 @@ enum keyWord{
   fcmp,
   br,
   label,
-  globa, //global
-  defin, //define for fun
+  globa, //not use 'global',since it is a keyWord in c++
+  defin, //not use 'define',since it is a keyWord in c++
   call,
 };
 
+/* splitWord stores all infomation of a single instructment
+ * of IR.
+ */
 struct splitWord{
-  keyWord instrName = knull;
-  vector<string> opCol;
-  vector<string> vaCol;
+  keyWord instrName = knull; //indicate which instr
+  vector<string> opCol;      //store operator like %x
+  vector<string> vaCol;      //store all word,splited by space
 };
 
 

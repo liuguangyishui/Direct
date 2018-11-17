@@ -83,5 +83,6 @@ void tranceDefine(splitWord);
 void tranceCall(splitWord);
 
 //for ret instr
-void tranceRet(splitWord);    
+void tranceRet(splitWord);
+    
 #endif
