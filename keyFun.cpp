@@ -50,6 +50,15 @@ string getRegValue_funPara(string opSrc){
   return regName;
 }
 
+string getRegValue_global(string opSrc){
+  if(globalMap.find(opSrc) == globalMap.end()){
+    cout << "The opSrc no valid value in globalMap!" << endl;
+    return " ";
+  }
+  string res = globalMap.find(opSrc)->second;
+  return res;
+}
+
 /*the beignning of program
  */
 void programBegin(){
@@ -75,14 +84,27 @@ string allocaReg_funPara(string opSrc){
   return regName;
 }
 
+string allocaReg_global(string opDes){
+  regRe objAlloc = regRe();
+  string regName = objAlloc.allocaReg();
+  globalMap[opDes] = regName;
+}
+
 void tranceLoad(splitWord wordCon){
   // cout << "i have benn called tranceLoad" << endl;
-  string opDes = wordCon.opCol[0];
-  string opSrc = wordCon.opCol[1];
-  if(storeMap.find(opSrc) == storeMap.end())  return;
+  string opSrc = wordCon.vaCol[5];
+  string opDes = wordCon.vaCol[0];
+  string regName;
+  regex reg1("@.+");
+  regex reg2("\%.+");
+  if(regex_match(opSrc, reg1)){
+    regName = getRegValue_global(opSrc);
+  } else if(regex_match(opSrc, reg2)){
+    regName = getRegValue(opSrc);
+  }
 
   if(storeMap.find(opDes) == storeMap.end()){
-    storeMap[opDes] = storeMap.find(opSrc)->second;
+    storeMap[opDes] = regName;
   }
 }
 
@@ -301,9 +323,9 @@ void tranceLabel(splitWord wordCon){
  */
 void tranceGlobal(splitWord wordCon){
   string opDes = wordCon.vaCol[0];
-  allocaReg(opDes);
+  allocaReg_global(opDes);
   string opSrc = wordCon.vaCol[4];
-  string regNameSrc = getRegValue(opDes);
+  string regNameSrc = getRegValue_global(opDes);
   outPut("movlw", opSrc);
   outPut("movwf(s", regNameSrc);   
 }

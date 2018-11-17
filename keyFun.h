@@ -11,6 +11,14 @@ using namespace::std;
  */
 static unordered_map<string, string> storeMap; 
 
+/* globalMap is store the map between the virtual
+ * reg like %x and acutal reg like 0x of the global
+ * var. The difference of the storeMap and globalMap
+ * is valitabal. storeMap will be cleaned when run out
+ * of a fun. But globalMap will be exitance forever.
+ */
+static unordered_map<string, string> globalMap;
+
 /*During the transform of some statement like the 
  *control statement in tranceBr fun, we should use 
  *the last instr infomation
@@ -25,11 +33,6 @@ static int indexNumPara = 0;
 /*record a fun have how many parameter
  */
 static int numPara = 0;
-
-/*globalMap store the map between the global var name
- *and the actual reg
- */
-static unordered_map<string, string> globalMap;
 
 //clear the comma in the singleLine
 void changeComma(string&); 
