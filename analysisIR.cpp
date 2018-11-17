@@ -52,6 +52,7 @@ void open_file(string &fileName){
     case label:              tranceLabel(wordCon);  break;
     case globa:              tranceGlobal(wordCon); break;
     case defin:              tranceDefine(wordCon); break;
+    case call:               tranceCall(wordCon);   break;
     default: break;
     }
   }

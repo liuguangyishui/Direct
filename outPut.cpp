@@ -11,7 +11,7 @@ void open_outputFile(string outputFileName){
   if(!outputFileName.empty()){
     fout.open(outputFileName,ios_base::out);
     if(fout.is_open())
-    //   assert(!fout.is_open());
+       assert(!fout.is_open());
   }
   
 }

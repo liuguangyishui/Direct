@@ -17,6 +17,15 @@ static unordered_map<string, string> storeMap;
  */
 static string lastInstrName(" ");
 
+/*record how many parameter have been deliver.
+ *for the fun getRegValue_funPara
+ */
+static int indexNumPara = 0;
+
+/*record a fun have how many parameter
+ */
+static int numPara = 0;
+
 /*globalMap store the map between the global var name
  *and the actual reg
  */
@@ -31,6 +40,8 @@ string getRegValue(string);
 
 //alloca actual reg address(0x) for virtual name(%x)
 void allocaReg(string);
+
+string allocaReg_funPara(string);
 
 //the beginning of program, deal with the enter and inerrupt
 void programBegin();
@@ -64,6 +75,9 @@ void tranceGlobal(splitWord);
 
 //for fun 
 void tranceDefine(splitWord);
+
+//for call
+void tranceCall(splitWord);
 
 //for ret instr
 void tranceRet(splitWord);    

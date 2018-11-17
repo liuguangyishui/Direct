@@ -12,7 +12,8 @@ static unordered_map<string,int> operateSet \
      {"add",5},     {"sub", 6},
      {"fcmp",7},    {"icmp", 7},
      {"br", 8},     {"<label>", 9},
-     {"global", 10},{"define", 11}};
+     {"global", 10},{"define", 11},
+     {"call", 12}};
 
 enum keyWord{
   knull,
@@ -28,6 +29,7 @@ enum keyWord{
   label,
   globa, //global
   defin, //define for fun
+  call,
 };
 
 struct splitWord{

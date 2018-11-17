@@ -1,5 +1,5 @@
 #include <iostream>
-#include <string>
+#include <cstring>
 #include <regex>
 #include <cassert>
 #include "keyFun.h"
@@ -13,9 +13,11 @@ class regRe;
 void changeComma(string &str){
   //  cout << "i have benn call changeComma" << endl;
   for(int i = 0; i < str.size(); i++){
-    if(str[i] == ',' || str[i] == ':' ){
+    if(str[i] == ',' || str[i] == ':' || \
+       str[i] == '(' || str[i] == ')'){
       str[i] = ' ';
     }
+    
   }
 }
 
@@ -25,18 +27,35 @@ void changeComma(string &str){
  */
 string getRegValue(string opSrc){
   if(storeMap.find(opSrc) == storeMap.end()){
-    assert("The opSrc no valid value!");
+    cout << "The opSrc no valid value!" << endl;
+    return " ";
   }
   string res = storeMap.find(opSrc)->second;
   return res;
+}
+
+/*This fun return a actual register form the fun para
+ *reserve
+ */
+string getRegValue_funPara(string opSrc){
+  if(indexNumPara >= numPara)
+    return " ";
+  
+  ++indexNumPara;
+  string regName("0x" + to_string(indexNumPara) + "H");
+  if(indexNumPara >= numPara){
+    indexNumPara = 0;
+    numPara = 0;
+  }
+  return regName;
 }
 
 /*the beignning of program
  */
 void programBegin(){
   outPut("org", "0x0000");
-  outPutJump("goto", "%main");
-  // outPutLabel("Start");
+  outPutJump("goto", "%begin");
+  outPutLabel("begin");
 }
 
 /*This fun alloca register for the IR's operator %x
@@ -50,12 +69,17 @@ void allocaReg(string opDes){
   storeMap[opDes] = regName;
 }
 
+string allocaReg_funPara(string opSrc){
+  regRe objAlloc = regRe();
+  string regName = objAlloc.allocaReg_funPara();
+  return regName;
+}
+
 void tranceLoad(splitWord wordCon){
   // cout << "i have benn called tranceLoad" << endl;
   string opDes = wordCon.opCol[0];
   string opSrc = wordCon.opCol[1];
   if(storeMap.find(opSrc) == storeMap.end())  return;
-
 
   if(storeMap.find(opDes) == storeMap.end()){
     storeMap[opDes] = storeMap.find(opSrc)->second;
@@ -63,16 +87,24 @@ void tranceLoad(splitWord wordCon){
 }
 
 void tranceStore(splitWord wordCon){
-  // cout << "i have been called tranceStore" << endl;
+
   string opSrc1 = wordCon.vaCol[2];
   string opSrc2 = wordCon.vaCol[4];
 
   regex res("\%.*");
   if(regex_match(opSrc1, res)){//Instr: store R to R
-    string regNameSrc1 = getRegValue(opSrc1);//get reg from storeMap
-    string regNameSrc2 = getRegValue(opSrc2);
-    outPut("movf(l)", regNameSrc1);
-    outPut("movwf(s", regNameSrc2);
+    if(numPara == 0) { //no fun parameter
+
+      string regNameSrc1 = getRegValue(opSrc1);//get reg from storeMap
+      string regNameSrc2 = getRegValue(opSrc2);
+      outPut("movf(l)", regNameSrc1);
+      outPut("movwf(s", regNameSrc2);
+    } else if(numPara != 0){//deal with fun para
+      string regNameSrc1 = getRegValue_funPara(opSrc1);
+      string regNameSrc2 = getRegValue(opSrc2);
+      outPut("movf(l)", regNameSrc1);
+      outPut("movwf(s", regNameSrc2);
+    } 
     return;
   } else {    //Instr: store Constant to R
     string regNameSrc = getRegValue(opSrc2);
@@ -280,12 +312,57 @@ void tranceDefine(splitWord wordCon){
   string opDes = wordCon.vaCol[2];
   int index = opDes.find("(");
   string funName = opDes.substr(1, index-1);
-  outPutLabel(funName);
+  outPutLabel(funName);  //print fun name label
+
+  numPara = 0; //fun para number
+  for(auto elem : wordCon.vaCol){ //How many para 
+    if(strcmp(elem.c_str(), "signext") == 0){
+      ++numPara;
+    }
+  }
+
+  if(storeMap.size() > 0){
+    storeMap.clear();
+  }
+ 
+}
+
+void tranceCall(splitWord wordCon){
+  if(find(wordCon.vaCol.begin(), wordCon.vaCol.end(), "signext") != \
+     wordCon.vaCol.end()){ //this is fun call
+    regex reg("\%.+");
+    
+    for(int i = 0; i < wordCon.vaCol.size(); i++){
+      if(strcmp(wordCon.vaCol[i].c_str(), "signext") == 0){
+	if(i+1 >= wordCon.vaCol.size()) return;
+	string opSrc = wordCon.vaCol[++i];
+	
+	if(regex_match(opSrc, reg)){
+	  string regName = getRegValue(opSrc); 
+	  outPut("movf(l)", regName);
+	} else {                     //the parameter is an constant
+	  outPut("movlw", opSrc);
+	}
+	string regName_funPara = allocaReg_funPara(opSrc);
+	outPut("movwf", regName_funPara);
+      }
+    }
+    string funName = wordCon.vaCol[4];
+    outPutJump("call", funName);
+
+    //if this fun have return value
+    string opRet = wordCon.vaCol[0];
+    if(regex_match(opRet, reg)){  
+      storeMap[opRet] = "0x1H"; //all return value store in 0x1H
+    }
+
+  }
 }
 
 void tranceRet(splitWord wordCon){
   //  cout << "i have been caleed tranceRet" << endl;
   string opDes = wordCon.opCol[0];
-  string add = storeMap.find(opDes)->second;
-  outPut("ret", add);
+  string addr = storeMap.find(opDes)->second;
+  outPut("movf(l)", addr);
+  outPut("movwf", "0x1H");
 }
