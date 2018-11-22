@@ -34,6 +34,9 @@ static int indexNumPara = 0;
  */
 static int numPara = 0;
 
+/*firstFun is used for main fun*/
+static bool firstFun = true;
+
 //clear the comma in the singleLine
 void changeComma(string&); 
 

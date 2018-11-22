@@ -84,7 +84,7 @@ string allocaReg_funPara(string opSrc){
   return regName;
 }
 
-string allocaReg_global(string opDes){
+void allocaReg_global(string opDes){
   regRe objAlloc = regRe();
   string regName = objAlloc.allocaReg();
   globalMap[opDes] = regName;
@@ -331,6 +331,12 @@ void tranceGlobal(splitWord wordCon){
 }
 
 void tranceDefine(splitWord wordCon){
+
+  if(firstFun == true){ //used for main
+    firstFun = false;
+    outPutJump("bra","%main");
+  } 
+  
   string opDes = wordCon.vaCol[2];
   int index = opDes.find("(");
   string funName = opDes.substr(1, index-1);
@@ -369,8 +375,9 @@ void tranceCall(splitWord wordCon){
 	outPut("movwf", regName_funPara);
       }
     }
-    string funName = wordCon.vaCol[4];
-    outPutJump("call", funName);
+    string funName = wordCon.vaCol[4];  //change @funName to %funName
+    string subfunName = "%" + funName.substr(1);
+    outPutJump("call", subfunName);
 
     //if this fun have return value
     string opRet = wordCon.vaCol[0];
@@ -383,8 +390,17 @@ void tranceCall(splitWord wordCon){
 
 void tranceRet(splitWord wordCon){
   //  cout << "i have been caleed tranceRet" << endl;
-  string opDes = wordCon.opCol[0];
-  string addr = storeMap.find(opDes)->second;
-  outPut("movf(l)", addr);
-  outPut("movwf", "0x1H");
+  // string opDes = wordCon.opCol[0];
+  string opDes = wordCon.vaCol[2];
+  regex reg("\%.+");
+  if(regex_match(opDes, reg)){
+    
+    string addr = storeMap.find(opDes)->second;
+    outPut("movf(l)", addr);
+    outPut("movwf", "0x1H");
+  } else {
+    string opSrc = opDes;
+    outPut("movlw", opSrc);
+    outPut("movwf", "0x1H");
+  }
 }
