@@ -400,4 +400,5 @@ void tranceRet(splitWord wordCon){
     outPut("movlw", opSrc);
   }
   outPut("movwf", "0x1H");
+  
 }
