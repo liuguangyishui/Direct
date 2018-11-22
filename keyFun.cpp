@@ -389,18 +389,15 @@ void tranceCall(splitWord wordCon){
 }
 
 void tranceRet(splitWord wordCon){
-  //  cout << "i have been caleed tranceRet" << endl;
   // string opDes = wordCon.opCol[0];
   string opDes = wordCon.vaCol[2];
   regex reg("\%.+");
-  if(regex_match(opDes, reg)){
-    
+  if(regex_match(opDes, reg)){ //return a constant or a variable 
     string addr = storeMap.find(opDes)->second;
     outPut("movf(l)", addr);
-    outPut("movwf", "0x1H");
   } else {
     string opSrc = opDes;
     outPut("movlw", opSrc);
-    outPut("movwf", "0x1H");
   }
+  outPut("movwf", "0x1H");
 }
