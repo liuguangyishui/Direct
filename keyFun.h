@@ -52,6 +52,9 @@ string allocaReg_funPara(string);
 //the beginning of program, deal with the enter and inerrupt
 void programBegin();
 
+//core code of add, and, xor and other
+void coreAdd_And(splitWord, string, string);
+
 //for load instr
 void tranceLoad(splitWord);   
 
@@ -84,6 +87,21 @@ void tranceDefine(splitWord);
 
 //for call
 void tranceCall(splitWord);
+
+//for and
+void tranceAnd(splitWord);
+
+//for or
+void tranceOr(splitWord);
+
+//for xor
+void tranceXor(splitWord);
+
+//for shl(不带进位的向左移位)
+void tranceShl(splitWord);
+
+//for ashr(不带进位的向右移位)
+void tranceAshr(splitWord);
 
 //for ret instr
 void tranceRet(splitWord);

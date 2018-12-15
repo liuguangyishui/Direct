@@ -53,6 +53,12 @@ void open_file(string &fileName){
     case globa:              tranceGlobal(wordCon); break;
     case defin:              tranceDefine(wordCon); break;
     case call:               tranceCall(wordCon);   break;
+    case anda:               tranceAnd(wordCon);    break;
+    case ora:                tranceOr(wordCon);     break;
+    case xora:               tranceXor(wordCon);    break;
+    case shl:                tranceShl(wordCon);    break;
+    case ashr:               tranceAshr(wordCon);   break;
+      
     default: break;
     }
   }

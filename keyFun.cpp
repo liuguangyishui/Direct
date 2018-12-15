@@ -90,6 +90,53 @@ void allocaReg_global(string opDes){
   globalMap[opDes] = regName;
 }
 
+void coreAdd_And(splitWord wordCon, string namewf, string namelw){
+if(wordCon.opCol.size() <= 2){ //Instr: a = R + Constant or reverse
+    string opDes = wordCon.opCol[0];
+    string opSrc1 = wordCon.vaCol[5];
+    string opSrc2 = wordCon.vaCol[6];
+    
+    string value1, value2;
+    regex reg("\%.*");
+    if(regex_match(opSrc1, reg)){
+      value1 = getRegValue(opSrc1);
+    } else{
+      value1 = opSrc1;
+    }
+    if(regex_match(opSrc2, reg)){  //Instr: a = Constant + R
+      value2 = getRegValue(opSrc2);
+      outPut("movf(l)", value2);
+      outPut(namelw, value1);
+      allocaReg(opDes);
+      string regName = getRegValue(opDes);
+      outPut("movwf(s", regName);
+      return; 
+    } else {                      //Instr: a = R + Constant
+      value2 = opSrc2;
+      outPut("movf(l)", value1);
+      outPut(namelw, value2);
+      allocaReg(opDes);
+      string regName = getRegValue(opDes);
+      outPut("movwf(s", regName);
+    }
+  } else if(wordCon.opCol.size() >= 3){ //Instr: a = R + R
+    string opDes = wordCon.opCol[0];
+    string opSrc1 = wordCon.opCol[1];
+    string opSrc2 = wordCon.opCol[2];
+
+    string value1 = getRegValue(opSrc1);
+    string value2 = getRegValue(opSrc2);
+    allocaReg(opDes);
+    string regName = getRegValue(opDes);
+
+    outPut("movf(l)", value1);
+    outPut(namewf, value2);
+    outPut("movwf(s", regName);
+  }
+}
+
+
+
 void tranceLoad(splitWord wordCon){
   // cout << "i have benn called tranceLoad" << endl;
   string opSrc = wordCon.vaCol[5];
@@ -386,6 +433,32 @@ void tranceCall(splitWord wordCon){
     }
 
   }
+}
+
+/* and operator
+ */
+void tranceAnd(splitWord wordCon){
+  coreAdd_And(wordCon, "andwf", "andlw");
+}
+
+/* or operator
+ */
+void tranceOr(splitWord wordCon){
+  coreAdd_And(wordCon, "iorwf", "iorlw");
+}
+
+/* xor operator
+ */
+void tranceXor(splitWord wordCon){
+  coreAdd_And(wordCon, "xorwf", "xorlw");
+}
+
+void tranceShl(splitWord wordCon){
+  coreAdd_And(wordCon, "rlncf", "rlncf");//not finish。。。。。
+}
+
+void tranceAshr(splitWord wordCon){
+  coreAdd_And(wordCon, "rrncf", "rrncf");//not finish。。。。。
 }
 
 void tranceRet(splitWord wordCon){

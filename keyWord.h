@@ -16,7 +16,9 @@ static unordered_map<string,int> operateSet \
      {"fcmp",7},    {"icmp", 7},
      {"br", 8},     {"<label>", 9},
      {"global", 10},{"define", 11},
-     {"call", 12}};
+     {"call", 12},  {"and", 13},
+     {"or", 14},    {"xor", 15},
+     {"shl", 16},   {"ashr", 17}};
 
 /* keyWord mainly use for the switch statement in 
  * analysisIR.cpp which indicate which tranfrom fun
@@ -37,6 +39,12 @@ enum keyWord{
   globa, //not use 'global',since it is a keyWord in c++
   defin, //not use 'define',since it is a keyWord in c++
   call,
+  anda,  //not use 'and', since it is a keyWord in c++
+  ora,   //not use 'or', since it is a keyWord in c++
+  xora,  //not use 'xor', since it is a keyWord in c++
+
+  shl,   //
+  ashr,
 };
 
 /* splitWord stores all infomation of a single instructment
