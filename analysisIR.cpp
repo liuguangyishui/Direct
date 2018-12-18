@@ -13,7 +13,9 @@ void open_file(string &fileName){
     return;
   }
   
+  //precedure section of the program 
   programBegin();//the beginning of program
+  programHint(); //the interrupt of the program
 
   string singleLine;
   while(getline(IRfile, singleLine)){//get every line
@@ -58,7 +60,7 @@ void open_file(string &fileName){
     case xora:               tranceXor(wordCon);    break;
     case shl:                tranceShl(wordCon);    break;
     case ashr:               tranceAshr(wordCon);   break;
-      
+    case zext:               tranceZext(wordCon);   break;
     default: break;
     }
   }

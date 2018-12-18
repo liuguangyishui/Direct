@@ -25,7 +25,7 @@ string regRe::allocaReg(){
     res = ox16[mod] + res;
   }
   res = ox16[RegNum_temp] + res;
-  return "0x" + res + "H";
+  return "0x" + res;// + "H";
 }
 
 string regRe::allocaReg_funPara(){
@@ -36,7 +36,7 @@ string regRe::allocaReg_funPara(){
   ++count_RegNum_funPara;
   string res = "0x";
   
-  return res+ox16[count_RegNum_funPara]+"H";
+  return res+ox16[count_RegNum_funPara];//+"H";
   
 }
 

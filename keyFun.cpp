@@ -42,7 +42,7 @@ string getRegValue_funPara(string opSrc){
     return " ";
   
   ++indexNumPara;
-  string regName("0x" + to_string(indexNumPara) + "H");
+  string regName("0x" + to_string(indexNumPara));// + "H");
   if(indexNumPara >= numPara){
     indexNumPara = 0;
     numPara = 0;
@@ -62,9 +62,20 @@ string getRegValue_global(string opSrc){
 /*the beignning of program
  */
 void programBegin(){
-  outPut("org", "0x0000");
+  outPutOrg("org", "0x0000");
   outPutJump("goto", "%begin");
-  outPutLabel("begin");
+  outPutOrg("org", "0x0008");
+  outPutJump("goto", "%Hint");
+  //  outPutLabel("begin");
+  outPutOrg("org", "0x0020");
+}
+
+/*the interrupt of the program
+ */
+void programHint(){
+  outPutLabel("Hint");
+  outPutOrg("retfie", "1");
+  outPutOrg("end", " ");
 }
 
 /*This fun alloca register for the IR's operator %x
@@ -91,11 +102,10 @@ void allocaReg_global(string opDes){
 }
 
 void coreAdd_And(splitWord wordCon, string namewf, string namelw){
-if(wordCon.opCol.size() <= 2){ //Instr: a = R + Constant or reverse
+  if(wordCon.opCol.size() <= 2){ //Instr: a = R + Constant or reverse
     string opDes = wordCon.opCol[0];
-    string opSrc1 = wordCon.vaCol[5];
-    string opSrc2 = wordCon.vaCol[6];
-    
+    string opSrc1 = wordCon.vaCol[4];
+    string opSrc2 = wordCon.vaCol[5];
     string value1, value2;
     regex reg("\%.*");
     if(regex_match(opSrc1, reg)){
@@ -105,19 +115,27 @@ if(wordCon.opCol.size() <= 2){ //Instr: a = R + Constant or reverse
     }
     if(regex_match(opSrc2, reg)){  //Instr: a = Constant + R
       value2 = getRegValue(opSrc2);
-      outPut("movf(l)", value2);
+      outPut("movf", value2);
       outPut(namelw, value1);
       allocaReg(opDes);
       string regName = getRegValue(opDes);
-      outPut("movwf(s", regName);
+      outPut("movwf", regName);
       return; 
     } else {                      //Instr: a = R + Constant
-      value2 = opSrc2;
-      outPut("movf(l)", value1);
-      outPut(namelw, value2);
-      allocaReg(opDes);
-      string regName = getRegValue(opDes);
-      outPut("movwf(s", regName);
+      if(!opSrc2.compare("-1") && namelw.compare("xor")){   //for descrement. change add to sub
+	//outPut("movf", value1);
+	outPut("comf", value1); //Instr: ~A
+	allocaReg(opDes);
+	string regName = getRegValue(opDes);
+	outPut("movwf", regName);
+      } else {
+	value2 = opSrc2;
+	outPut("movf", value1);
+	outPut(namelw, value2);
+	allocaReg(opDes);
+	string regName = getRegValue(opDes);
+	outPut("movwf", regName);
+      }
     }
   } else if(wordCon.opCol.size() >= 3){ //Instr: a = R + R
     string opDes = wordCon.opCol[0];
@@ -129,9 +147,9 @@ if(wordCon.opCol.size() <= 2){ //Instr: a = R + Constant or reverse
     allocaReg(opDes);
     string regName = getRegValue(opDes);
 
-    outPut("movf(l)", value1);
+    outPut("movf", value1);
     outPut(namewf, value2);
-    outPut("movwf(s", regName);
+    outPut("movwf", regName);
   }
 }
 
@@ -166,19 +184,19 @@ void tranceStore(splitWord wordCon){
 
       string regNameSrc1 = getRegValue(opSrc1);//get reg from storeMap
       string regNameSrc2 = getRegValue(opSrc2);
-      outPut("movf(l)", regNameSrc1);
-      outPut("movwf(s", regNameSrc2);
+      outPut("movf", regNameSrc1);
+      outPut("movwf", regNameSrc2);
     } else if(numPara != 0){//deal with fun para
       string regNameSrc1 = getRegValue_funPara(opSrc1);
       string regNameSrc2 = getRegValue(opSrc2);
-      outPut("movf(l)", regNameSrc1);
-      outPut("movwf(s", regNameSrc2);
+      outPut("movf", regNameSrc1);
+      outPut("movwf", regNameSrc2);
     } 
     return;
   } else {    //Instr: store Constant to R
     string regNameSrc = getRegValue(opSrc2);
     outPut("movlw", opSrc1);
-    outPut("movwf(s", regNameSrc);
+    outPut("movwf", regNameSrc);
   }
 }
 
@@ -209,19 +227,27 @@ void tranceAdd(splitWord wordCon){
     }
     if(regex_match(opSrc2, reg)){  //Instr: a = Constant + R
       value2 = getRegValue(opSrc2);
-      outPut("movf(l)", value2);
+      outPut("movf", value2);
       outPut("addlw", value1);
       allocaReg(opDes);
       string regName = getRegValue(opDes);
-      outPut("movwf(s", regName);
+      outPut("movwf", regName);
       return; 
     } else {                      //Instr: a = R + Constant
-      value2 = opSrc2;
-      outPut("movf(l)", value1);
-      outPut("addlw", value2);
-      allocaReg(opDes);
-      string regName = getRegValue(opDes);
-      outPut("movwf(s", regName);
+      if(!opSrc2.compare("-1")){   //for descrement. change add to sub
+	outPut("movf", value1);
+	outPut("sublw", "1");
+	allocaReg(opDes);
+	string regName = getRegValue(opDes);
+	outPut("movwf", regName);
+      } else {
+	value2 = opSrc2;
+	outPut("movf", value1);
+	outPut("addlw", value2);
+	allocaReg(opDes);
+	string regName = getRegValue(opDes);
+	outPut("movwf", regName);
+      }
     }
   } else if(wordCon.opCol.size() >= 3){ //Instr: a = R + R
     string opDes = wordCon.opCol[0];
@@ -233,9 +259,9 @@ void tranceAdd(splitWord wordCon){
     allocaReg(opDes);
     string regName = getRegValue(opDes);
 
-    outPut("movf(l)", value1);
+    outPut("movf", value1);
     outPut("addwf", value2);
-    outPut("movwf(s", regName);
+    outPut("movwf", regName);
   }
   
 }
@@ -258,11 +284,11 @@ void tranceSub(splitWord wordCon){
     } 
     if(regex_match(opSrc2, res)){ //Instr: a = constant - R
       value2 = getRegValue(opSrc2);
-      outPut("movf(l)", value2);
+      outPut("movf", value2);
       outPut("sublw", opSrc1);
       allocaReg(opDes);
       string regName = getRegValue(opDes);
-      outPut("movwf(s", regName);
+      outPut("movwf", regName);
       return;
     } else {                     //Instr: a = R - constant
       allocaReg(opDes);
@@ -270,7 +296,7 @@ void tranceSub(splitWord wordCon){
       value2 = opSrc2;
       outPut("movlw", value2);
       outPut("subwf", value1);
-      outPut("movwf(s", regName);
+      outPut("movwf", regName);
     }
   } else if(wordCon.opCol.size() >= 3){ //Instr: a = R - R
     string opDes = wordCon.opCol[0];
@@ -281,9 +307,9 @@ void tranceSub(splitWord wordCon){
     string regNameSrc1 = getRegValue(opSrc1);
     string regNameSrc2 = getRegValue(opSrc2);
     string regNameDes = getRegValue(opDes);
-    outPut("movf(l)", regNameSrc2);
+    outPut("movf", regNameSrc2);
     outPut("subwf", regNameSrc1);
-    outPut("movwf(s", regNameDes);
+    outPut("movwf", regNameDes);
   }
 }
 
@@ -294,18 +320,24 @@ void tranceSub(splitWord wordCon){
  */ 
 void tranceFcmp(splitWord wordCon){
   string instrName = wordCon.vaCol[3];
-  if(instrName.compare("ogt")){
+  if(!instrName.compare("sgt") || !instrName.compare("ogt")){
     tranceSub(wordCon);
-    lastInstrName = "ogt";
-  } else if(instrName.compare("olt")){
+    lastInstrName = "gt";
+  } else if(!instrName.compare("slt") || !instrName.compare("olt")){
     tranceSub(wordCon);
-    lastInstrName = "olt";
-  } else if(instrName.compare("ole")){
+    lastInstrName = "lt";
+  } else if(!instrName.compare("sle") || !instrName.compare("ole")){ 
     tranceSub(wordCon);
-    lastInstrName = "ole";
-  } else if(instrName.compare("oge")){
+    lastInstrName = "le";
+  } else if(!instrName.compare("sge") || !instrName.compare("oge")){
     tranceSub(wordCon);
-    lastInstrName = "oge";
+    lastInstrName = "ge";
+  } else if(!instrName.compare("ne") || !instrName.compare("one")){
+    tranceSub(wordCon);
+    lastInstrName = "ne";
+  } else if(!instrName.compare("eq") || !instrName.compare("oeq")){
+    tranceSub(wordCon);
+    lastInstrName = "eq";
   }
 }
 /*The BR instr is for the control statement.
@@ -316,39 +348,57 @@ void tranceFcmp(splitWord wordCon){
 void tranceBr(splitWord wordCon){
   if(wordCon.opCol.size() >= 2){ //Instr: for br %x %x %x
     string instrName = lastInstrName;     //decide by last instrName
-    if(instrName.compare("ole")){         //Instr: a <= b
+    if(!instrName.compare("le")){         //Instr: a <= b
       string opBlock1 = wordCon.vaCol[4];
       string opBlock2 = wordCon.vaCol[6];
       outPut("btfsc", "STATUS", 0, 1);
       outPutJump("bra", opBlock1);
       outPutJump("bra", opBlock2);
 
-    } else if(instrName.compare("oge")){  //Instr: a >= b
+    } else if(!instrName.compare("ge")){  //Instr: a >= b
       string opBlock1 = wordCon.vaCol[4];
       string opBlock2 = wordCon.vaCol[6];
       outPut("btfss", "STATUS", 0, 1);
       outPutJump("bra", opBlock1);
       outPutJump("bra", opBlock2);
 
-    } else if(instrName.compare("olt")){ //Instr: a < b
+    } else if(!instrName.compare("lt")){ //Instr: a < b
       string testName = wordCon.vaCol[2];
       string regNameTest = getRegValue(testName);
       string opBlock1 = wordCon.vaCol[4];
       string opBlock2 = wordCon.vaCol[6];
-      outPut("movlw", 0);
+      outPut("movlw", "0");
       outPut("cpfseq", regNameTest);
       outPut("btfss", "STATUS", 0, 1);
       outPutJump("bra", opBlock2);
       outPutJump("bra", opBlock1);
     
-    } else if(instrName.compare("ogt")){ //Instr: a > b
+    } else if(!instrName.compare("gt")){ //Instr: a > b
       string testName = wordCon.vaCol[2];
       string regNameTest = getRegValue(testName);
       string opBlock1 = wordCon.vaCol[4];
       string opBlock2 = wordCon.vaCol[6];
-      outPut("movlw", 0);
+      outPut("movlw", "0");
       outPut("cpfseq", regNameTest);
       outPut("btfsc", "STATUS", 0, 1);
+      outPutJump("bra", opBlock2);
+      outPutJump("bra", opBlock1);
+    } else if(!instrName.compare("ne")){ //Instr: a != b ?
+      string testName = wordCon.vaCol[2];
+      string regNameTest = getRegValue(testName);
+      string opBlock1 = wordCon.vaCol[4];
+      string opBlock2 = wordCon.vaCol[6];
+      outPut("movlw", "0");
+      outPut("cpfseq", regNameTest);
+      outPutJump("bra", opBlock1);
+      outPutJump("bra", opBlock2);
+    } else if(!instrName.compare("eq")){ //Instr: a == b?
+      string testName = wordCon.vaCol[2];
+      string regNameTest = getRegValue(testName);
+      string opBlock1 = wordCon.vaCol[4];
+      string opBlock2 = wordCon.vaCol[6];
+      outPut("movlw", "0");
+      outPut("cpfseq", regNameTest);
       outPutJump("bra", opBlock2);
       outPutJump("bra", opBlock1);
     }
@@ -357,6 +407,76 @@ void tranceBr(splitWord wordCon){
     string opBlock = wordCon.opCol[0];
     outPutJump("bra", opBlock);
   }
+}
+
+/*  
+ */
+void tranceZext(splitWord wordCon){
+    string opDes = wordCon.opCol[0];
+    string opSrc1 = wordCon.vaCol[4];
+    string regNameTest = getRegValue(opSrc1);
+    allocaReg(opDes);
+    string regName = getRegValue(opDes);
+    string instrName = lastInstrName;
+
+    if(!instrName.compare("eq")){//regNam=(regNameTest==0)?1:0;
+      outPut("movlw", "1");                
+      outPut("movwf", regName);          
+      outPut("movlw", "0");
+      outPut("cpfseq", regNameTest); 
+      outPut("movwf", regName);
+    } else if(!instrName.compare("ne")){//regName=(regNameTest==0)?0:1;
+      outPut("movlw", "1");
+      outPut("movwf", regName);
+      outPut("movlw", "0");
+      outPut("cpfseq", regNameTest);
+      outPutJump("bra", "%next");
+      outPut("movwf", regName);
+      outPutLabel("next");
+    } else if(!instrName.compare("gt")){ //Instr: (a > b)
+      outPut("movlw", "1");
+      outPut("movwf", regName);
+      outPut("movlw", "0");
+      outPut("cpfseq", regNameTest);
+      outPut("btfsc", "STATUS", 0, 1);
+      outPut("movwf", regName);   
+    } else if(!instrName.compare("lt")){ //Instr: (a < b)
+      outPut("movlw", "1");
+      outPut("movwf", regName);
+      outPut("movlw", "0");
+      outPut("cpfseq", regNameTest);
+      outPut("btfss", "STATUS", 0, 1);
+      outPut("movwf", regName);
+    } else if(!instrName.compare("ge")){ //Instr: (a >= b)
+      outPut("movlw", "0");
+      outPut("cpfseq", regNameTest);
+      outPut("btfss", "STATUS", 0, 1);
+      outPutJump("bra", "%next2");
+      outPutJump("bra", "%next1");
+      outPutLabel("next1");
+      outPut("movlw", "0");
+      outPut("movwf", regName);
+      outPutJump("bra", "%next3");
+      outPutLabel("next2");
+      outPut("movlw", "1");
+      outPut("movwf", regName);
+      outPutLabel("next3");
+    } else if(!instrName.compare("le")){ //Instr: (a <= b)
+      outPut("movlw", "0");
+      outPut("cpfseq", regNameTest);
+      outPut("btfsc", "STATUS", 0, 1);
+      outPutJump("bra", "%next2");
+      outPutJump("bra", "%next1");
+      outPutLabel("next1");
+      outPut("movlw", "0");
+      outPut("movwf", regName);
+      outPutJump("bra", "%next3");
+      outPutLabel("next2");
+      outPut("movlw", "1");
+      outPut("movwf", regName);
+      outPutLabel("next3");
+    }
+    lastInstrName = " ";
 }
 
 /*print the label as a signal of jump statement
@@ -374,13 +494,14 @@ void tranceGlobal(splitWord wordCon){
   string opSrc = wordCon.vaCol[4];
   string regNameSrc = getRegValue_global(opDes);
   outPut("movlw", opSrc);
-  outPut("movwf(s", regNameSrc);   
+  outPut("movwf", regNameSrc);   
 }
 
 void tranceDefine(splitWord wordCon){
 
   if(firstFun == true){ //used for main
     firstFun = false;
+    outPutLabel("begin");
     outPutJump("bra","%main");
   } 
   
@@ -414,7 +535,7 @@ void tranceCall(splitWord wordCon){
 	
 	if(regex_match(opSrc, reg)){
 	  string regName = getRegValue(opSrc); 
-	  outPut("movf(l)", regName);
+	  outPut("movf", regName);
 	} else {                     //the parameter is an constant
 	  outPut("movlw", opSrc);
 	}
@@ -429,7 +550,7 @@ void tranceCall(splitWord wordCon){
     //if this fun have return value
     string opRet = wordCon.vaCol[0];
     if(regex_match(opRet, reg)){  
-      storeMap[opRet] = "0x1H"; //all return value store in 0x1H
+      storeMap[opRet] = "0x1"; //all return value store in 0x1H
     }
 
   }
@@ -467,11 +588,11 @@ void tranceRet(splitWord wordCon){
   regex reg("\%.+");
   if(regex_match(opDes, reg)){ //return a constant or a variable 
     string addr = storeMap.find(opDes)->second;
-    outPut("movf(l)", addr);
+    outPut("movf", addr);
   } else {
     string opSrc = opDes;
     outPut("movlw", opSrc);
   }
-  outPut("movwf", "0x1H");
+  outPut("movwf", "0x1");
   
 }

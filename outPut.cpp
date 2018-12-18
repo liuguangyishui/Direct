@@ -41,6 +41,10 @@ void outPut(string instrName, string op,int index1 = 0, int index2 = 1){
   }
 }
 
+void outPutOrg(string instrName, string op){
+  cout << "\t" << instrName << "\t\t" << op << "\t" << endl;
+}
+
 void outPutJump(string instrName, string op){
   if(outputFileName.empty() && fout.is_open()){
     fout << "\t" << instrName << "\t\t" << "Label" << op << endl;

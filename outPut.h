@@ -17,6 +17,9 @@ void outPut(string, string);
 //print instr with the last index number
 void outPut(string, string, int, int);
 
+//print the paramter, without additonal content. like cout
+void outPutOrg(string, string);
+
 //print instr that jump to target instr
 void outPutJump(string, string);
 

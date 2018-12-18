@@ -52,6 +52,9 @@ string allocaReg_funPara(string);
 //the beginning of program, deal with the enter and inerrupt
 void programBegin();
 
+//the interrupt of the program
+void programHint();
+
 //core code of add, and, xor and other
 void coreAdd_And(splitWord, string, string);
 
@@ -75,6 +78,9 @@ void tranceFcmp(splitWord);
 
 //for jump instr
 void tranceBr(splitWord);     
+
+//for zext instr
+void tranceZext(splitWord);
 
 //for label instr
 void tranceLabel(splitWord);  
