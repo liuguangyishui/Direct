@@ -63,9 +63,9 @@ string getRegValue_global(string opSrc){
  */
 void programBegin(){
   outPutOrg("org", "0x0000");
-  outPutJump("goto", "begin");
+  outPutJump("bra", "begin");
   outPutOrg("org", "0x0008");
-  outPutJump("goto", "Hint");
+  outPutJump("bra", "Hint");
   //  outPutLabel("begin");
   outPutOrg("org", "0x0020");
 }
