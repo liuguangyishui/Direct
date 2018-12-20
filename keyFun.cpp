@@ -574,12 +574,16 @@ void tranceXor(splitWord wordCon){
   coreAdd_And(wordCon, "xorwf", "xorlw");
 }
 
+/* << operator
+ */
 void tranceShl(splitWord wordCon){
-  coreAdd_And(wordCon, "rlncf", "rlncf");//not finish。。。。。
+  coreAdd_And(wordCon, "rlncf", "rlncf");
 }
 
+/* >> operator
+ */
 void tranceAshr(splitWord wordCon){
-  coreAdd_And(wordCon, "rrncf", "rrncf");//not finish。。。。。
+  coreAdd_And(wordCon, "rrncf", "rrncf");
 }
 
 void tranceRet(splitWord wordCon){
