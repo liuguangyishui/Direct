@@ -5,18 +5,20 @@
 #include "keyFun.h"
 #include "outPut.h"
 #include "regAlloc.h"
+#include "dataArea.h"
 
 
 using namespace::std;
 class regRe;
+class ManageDataArea;
 
 void changeComma(string &str){
-  //  cout << "i have benn call changeComma" << endl;
-  for(int i = 0; i < str.size(); i++){
-    if(str[i] == ',' || str[i] == ':' || \
-       str[i] == '(' || str[i] == ')'){
-      str[i] = ' ';
-    }
+//  cout << "i have benn call changeComma" << endl;
+    for(int i = 0; i < str.size(); i++){
+    if(str[i] == ',' || str[i] == ':' ||		\
+      str[i] == '(' || str[i] == ')'){
+        str[i] = ' ';
+   }
     
   }
 }
@@ -63,11 +65,13 @@ string getRegValue_global(string opSrc){
  */
 void programBegin(){
   outPutOrg("org", "0x0000");
-  outPutJump("bra", "begin");
+  outPutJump("bra", "Preprocess");
+  //outPutJump("bra", "begin");
   outPutOrg("org", "0x0008");
   outPutJump("bra", "Hint");
   //  outPutLabel("begin");
   outPutOrg("org", "0x0020");
+  outPutLabel("Preprocess");
 }
 
 /*the interrupt of the program
@@ -81,12 +85,22 @@ void programHint(){
 /*This fun alloca register for the IR's operator %x
  */
 void allocaReg(string opDes){
-  if(storeMap.find(opDes) == storeMap.end()){
-    assert("opDes invalid, allocaReg failed!");
-  }
+  //assert(!(storeMap.find(opDes) == storeMap.end()));
   regRe objAlloc = regRe();
   string regName = objAlloc.allocaReg();
-  storeMap[opDes] = regName;
+  
+  create_Op_In_StoreMap(opDes, regName);
+}
+
+/*after alloca a real reg for operator, then store there map
+ *relation in StoreMap
+ */
+void create_Op_In_StoreMap(string opName, string regName){
+  if(storeMap.find(opName) != storeMap.end())
+    return;
+    storeMap.insert(make_pair(opName, regName));
+  //storeMap.insert(pair<string, string>(opName, regName));
+  //  storeMap[opName] = regName;
 }
 
 string allocaReg_funPara(string opSrc){
@@ -122,12 +136,17 @@ void coreAdd_And(splitWord wordCon, string namewf, string namelw){
       outPut("movwf", regName);
       return; 
     } else {                      //Instr: a = R + Constant
-      if(!opSrc2.compare("-1") && namelw.compare("xor")){   //for descrement. change add to sub
+      if(!opSrc2.compare("-1") && !namelw.compare("xorlw")){
 	//outPut("movf", value1);
 	outPut("comf", value1); //Instr: ~A
 	allocaReg(opDes);
 	string regName = getRegValue(opDes);
 	outPut("movwf", regName);
+      } else if(!opSrc2.compare("true") && !namelw.compare("xorlw")){
+	allocaReg(opDes);              //Instr: B = !A
+	outPut("movlw", "1");
+	outPut(namelw, getRegValue(opSrc1));
+	outPut("movwf", getRegValue(opDes));
       } else {
 	value2 = opSrc2;
 	outPut("movf", value1);
@@ -156,20 +175,39 @@ void coreAdd_And(splitWord wordCon, string namewf, string namelw){
 
 
 void tranceLoad(splitWord wordCon){
-  // cout << "i have benn called tranceLoad" << endl;
-  string opSrc = wordCon.vaCol[5];
-  string opDes = wordCon.vaCol[0];
-  string regName;
-  regex reg1("@.+");
-  regex reg2("\%.+");
-  if(regex_match(opSrc, reg1)){
-    regName = getRegValue_global(opSrc);
-  } else if(regex_match(opSrc, reg2)){
-    regName = getRegValue(opSrc);
-  }
 
-  if(storeMap.find(opDes) == storeMap.end()){
-    storeMap[opDes] = regName;
+  if(find(wordCon.vaCol.begin(), wordCon.vaCol.end(), "getelementptr") != wordCon.vaCol.end()){ //get element from data from
+    
+    string opDes = wordCon.vaCol[0];
+    allocaReg(opDes); //aloca acutal register
+    string regName = getRegValue(opDes); //get the actual reg of opDes
+    string strNum = wordCon.vaCol[17];
+   
+    int num = getNum(strNum);
+  
+    ManageDataArea *MDA = ManageDataArea::getInstance();
+  
+    string addr = MDA->getValAddrInMap(wordCon.vaCol[13]);
+  
+    MDA->loadValue(addr, num);
+  
+    outPut("movf", "tablat");
+    outPut("movwf", regName);
+    
+    
+  } else { //get element from register
+
+    string opSrc = wordCon.vaCol[5];
+    string opDes = wordCon.vaCol[0];
+    string regName;
+    regex reg1("@.+");
+    regex reg2("\%.+");
+    if(regex_match(opSrc, reg1)){
+      regName = getRegValue_global(opSrc);
+    } else if(regex_match(opSrc, reg2)){
+      regName = getRegValue(opSrc);
+    }
+    create_Op_In_StoreMap(opDes, regName);
   }
 }
 
@@ -201,7 +239,6 @@ void tranceStore(splitWord wordCon){
 }
 
 void tranceAlloca(splitWord wordCon){
-  //cout << "i have been called tranceAlloca" << endl;
   string opDes = wordCon.opCol[0];
   allocaReg(opDes);//alloca actual reg for the IR's
 
@@ -348,6 +385,16 @@ void tranceFcmp(splitWord wordCon){
 void tranceBr(splitWord wordCon){
   if(wordCon.opCol.size() >= 2){ //Instr: for br %x %x %x
     string instrName = lastInstrName;     //decide by last instrName
+    
+    string beforeOpBlock1 = wordCon.vaCol[4];
+    string beforeOpBlock2 = wordCon.vaCol[6];
+  
+    allocaReg(beforeOpBlock1);
+    allocaReg(beforeOpBlock2);
+    outPut("movlw", "0");
+    outPut("movwf", getRegValue(beforeOpBlock1));
+    outPut("movwf", getRegValue(beforeOpBlock2));
+
 
     string opBlock1 = wordCon.vaCol[4].substr(1);
     string opBlock2 = wordCon.vaCol[6].substr(1);
@@ -473,8 +520,16 @@ void tranceZext(splitWord wordCon){
 /*print the label as a signal of jump statement
  */
 void tranceLabel(splitWord wordCon){
-  string orderName = wordCon.vaCol[2];
-  outPutLabel(orderName);
+  string labelName = wordCon.vaCol[2];
+  outPutLabel(labelName);
+  
+  labelName = "%" + labelName;
+  if(getRegValue(labelName).compare(" ")){
+    string regName = getRegValue(labelName);
+    outPut("movlw", "1");
+    outPut("movwf", regName);
+  }
+ 
 }
 
 /*global var 
@@ -492,6 +547,7 @@ void tranceDefine(splitWord wordCon){
 
   if(firstFun == true){ //used for main
     firstFun = false;
+    outPutJump("bra", "begin");
     outPutLabel("begin");
     outPutJump("bra","main");
   } 
@@ -576,6 +632,206 @@ void tranceShl(splitWord wordCon){
 void tranceAshr(splitWord wordCon){
   coreAdd_And(wordCon, "rrncf", "rrncf");
 }
+
+/*&& and || operator
+ */
+void trancePhi(splitWord wordCon){
+  string index_op = wordCon.vaCol[5]; 
+  string opDes = wordCon.vaCol[0];
+  allocaReg(opDes);
+  string regDes = getRegValue(opDes);
+  string opSrc1 = wordCon.vaCol[9];
+  string opSrc2 = wordCon.vaCol[10];
+    
+  if(!index_op.compare("true")){ //Instr: for || operator
+    regex reg("\%.+");
+    if(regex_match(opSrc1, reg)){
+      string regOpSrc1 = getRegValue(opSrc1);
+      string regOpSrc2 = getRegValue(opSrc2);
+      outPut("movlw", "0");
+      outPut("cpfseq", regOpSrc2);
+      outPutJump("bra", "next1");
+      outPut("cpfseq", regOpSrc1);
+      outPutJump("bra", "next1");
+      outPutJump("bra", "next2");
+      
+      outPutLabel("next1");
+      outPut("movlw", "1");
+      outPut("movwf", regDes);
+      outPutJump("bra", "next3");
+      outPutLabel("next2");
+      outPut("movlw", "0");
+      outPut("movwf", regDes);
+      outPutLabel("next3");
+    } else {
+      if(!opSrc1.compare("true")){
+	outPut("movlw", "1");
+	outPut("movwf", regDes);
+      } else if(!opSrc2.compare("false")){
+	outPut("movlw", "0");
+	outPut("cpfseq", getRegValue(opSrc2));
+	outPutJump("bra", "next1");
+	outPut("movwf", regDes);
+	outPutJump("bra", "next2");
+	outPutLabel("next1");
+	outPut("movlw", "1");
+	outPut("movwf", regDes);
+	outPutLabel("next2");
+      }
+
+    }
+  } else if(!index_op.compare("false")){ //Instr: for && operator
+    regex reg("\%.+");
+    if(regex_match(opSrc1, reg)){
+      string regOpSrc1 = getRegValue(opSrc1);
+      string regOpSrc2 = getRegValue(opSrc2);
+      outPut("movlw", "1");
+      outPut("movwf", regDes);
+      
+      outPut("movlw", "0");
+      outPut("cpfseq", regOpSrc1);
+      outPutJump("bra", "next1");
+      outPutJump("bra", "next2");
+      outPutLabel("next1");
+      outPut("cpfseq", regOpSrc2);      
+      outPutJump("bra", "next3");
+      outPutJump("bra", "next2");
+
+      outPutLabel("next2");
+      outPut("movlw", "0");
+      outPut("movwf", regDes);
+      outPutLabel("next3");
+    
+    } else {
+      if(!opSrc1.compare("false")){
+	outPut("movlw", "0");
+	outPut("movwf", regDes);
+      } else if(!opSrc1.compare("true")){
+	outPut("movlw", "0");
+	outPut("cpfseq", getRegValue(opSrc2));
+	outPutJump("bra", "next1");
+	outPut("movwf", regDes);
+	outPutJump("bra", "next2");
+	outPutLabel("next1");
+	outPut("movlw", "1");
+	outPut("movwf", regDes);
+        outPutLabel("next2");
+      }
+    }
+    
+  }
+
+}
+
+/*Instr for array.
+ *there are two places to store the element of array
+ *the first place is the register
+ *the other is the data area which in the programmer area
+ *
+ */
+void tranceConstant(splitWord wordCon){
+#define  VEC wordCon.vaCol
+  //inter constant array and global constant array
+  if((find(VEC.begin(), VEC.end(), "internal") != VEC.end()) &&	           (find(VEC.begin(), VEC.end(), "x") != VEC.end())  
+    ||
+    ((find(VEC.begin(), VEC.end(), "constant") != VEC.end()) && 
+    (VEC[1] == "=") && (VEC[4] == "x"))){
+
+    int arrayElemNum = getArrayElemNum(wordCon);
+    ManageDataArea *MDA = ManageDataArea::getInstance();
+    //store the begin addr
+    MDA->createMap(wordCon.vaCol[0], arrayElemNum ); 
+    vector<string> dataVec;
+    
+    //absort data from wordCon
+    getDataFromInstr(dataVec, wordCon);
+    
+    if(dataVec.size() != 0){
+      for(auto elem: dataVec){   //store data to data area
+        MDA->storeValue(elem);
+      }
+    }
+
+  }else if(find(wordCon.vaCol.begin(), wordCon.vaCol.end(), 
+		"unnamed_addr") != wordCon.vaCol.end()){
+    
+  }else if(find(wordCon.vaCol.begin(), wordCon.vaCol.end(), "x") 
+	   != wordCon.vaCol.end()){ //for global costant array
+  /*
+    int arrayElemNum = getArrayElemNum(wordCon);
+
+    ManageDataArea *MDA = ManageDataArea::getInstance();
+    //store the begin addr
+    MDA->createMap(wordCon.vaCol[0], arrayElemNum ); 
+
+    vector<string> dataVec;
+
+    getDataFromInstr(dataVec, wordCon); //absort data from array instr
+
+
+    if(dataVec.size() != 0){
+      for(auto elem: dataVec){   //store data to data area
+        MDA->storeValue(elem);
+      }
+      }
+  */
+  } else { //for constant val
+    
+  }
+#undef VEC 
+}
+
+void getDataFromInstr(vector<string> &dataVec, splitWord wordCon){
+  //typedef wordCon.vaCol vec;
+  auto index = find(wordCon.vaCol.begin(), wordCon.vaCol.end(), "x");
+  int num = getArrayElemNum(wordCon);
+  index += 2;
+  
+  if((*index)[0] == 'c'){ //char array
+  string data = (*(index)).substr(2);
+    for(int i = 0; i < data.size()-1; i++){
+      dataVec.push_back(to_string(data[i]));
+    }
+  } else {   //int array
+
+    index += 1;
+    for(int i = 0; i < num; i++){
+      if(i == num - 1){ //remove ']' in 8]
+	string val = *index;
+	int valSize = val.size();
+	val = val.substr(0, valSize - 1);
+	dataVec.push_back(val);
+      } else {
+	dataVec.push_back(*index);
+	index += 2;
+      }
+    }
+  }
+}
+
+
+int getArrayElemNum(splitWord wordCon){
+  auto index = find(wordCon.vaCol.begin(), wordCon.vaCol.end(), "x");
+  
+  string temp(*(index - 1));
+  
+  string temp2(temp.substr(1));
+  
+  int num = getNum(temp2);
+  return num;
+}
+
+int getNum(string strVal){
+  int res = 0;
+
+  for(int i = strVal.size()-1, j = 0; i >= 0; i--, j++){
+    int dif = strVal[i] - '0';
+    int val = dif * pow(10, j);
+    res += val;
+  }
+  return res;
+}
+
 
 void tranceRet(splitWord wordCon){
   // string opDes = wordCon.opCol[0];

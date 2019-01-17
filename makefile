@@ -1,5 +1,5 @@
 
-ALLFILE = main.o analysisIR.o keyFun.o outPut.o regAlloc.o
+ALLFILE = main.o analysisIR.o keyFun.o outPut.o regAlloc.o dataArea.o
 STD = -std=gnu++11
 
 test:	${ALLFILE}
@@ -18,6 +18,9 @@ outPut.o: outPut.cpp outPut.h
 	g++ -c $< ${STD}
 
 regAlloc.o: regAlloc.cpp regAlloc.h
+	g++ -c $< ${STD}
+
+dataArea.o: dataArea.cpp dataArea.h regAlloc.h
 	g++ -c $< ${STD}
 
 clean:

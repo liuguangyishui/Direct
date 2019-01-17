@@ -49,6 +49,8 @@ void allocaReg(string);
 
 string allocaReg_funPara(string);
 
+void create_Op_In_StoreMap(string, string);
+
 //the beginning of program, deal with the enter and inerrupt
 void programBegin();
 
@@ -109,7 +111,22 @@ void tranceShl(splitWord);
 //for ashr(不带进位的向右移位)
 void tranceAshr(splitWord);
 
+//for phi
+void trancePhi(splitWord);
+
+//for constant
+void tranceConstant(splitWord);
+
+void getDataFromInstr(vector<string> &, splitWord);
+
+//get array elem num
+int getArrayElemNum(splitWord);
+
+//change string to int 
+int getNum(string);
+
 //for ret instr
 void tranceRet(splitWord);
     
 #endif
+

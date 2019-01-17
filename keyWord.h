@@ -19,7 +19,8 @@ static unordered_map<string,int> operateSet \
      {"call", 12},  {"and", 13},
      {"or", 14},    {"xor", 15},
      {"shl", 16},   {"ashr", 17},
-     {"zext", 18}};
+     {"zext", 18},  {"phi", 19},
+     {"constant", 20}};
 
 /* keyWord mainly use for the switch statement in 
  * analysisIR.cpp which indicate which tranfrom fun
@@ -47,6 +48,8 @@ enum keyWord{
   shl,   //
   ashr,
   zext,  //expand 
+  phi,
+  constant,
 };
 
 /* splitWord stores all infomation of a single instructment
